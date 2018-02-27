@@ -2,7 +2,7 @@
 
 This script scrapes all categorical data from practicalplants.org into a locally running mongoDB instance.
 
-It requires mwparserfromhell, pymediawiki and the official python mongo module.
+It requires beautifulsoup, mwparserfromhell, pymediawiki and pymongo.
 
 This ships with a MODIFIED version of pymediawiki as practicalplants.org uses a very slightly modified version of current mediawiki standards.
 
