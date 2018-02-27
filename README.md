@@ -11,3 +11,7 @@ The mongoDB instance should be running like this:
 To export the database to a JSON file within the docker container, do this:
 
 `sudo docker exec -it my-mongo mongoexport --db database --collection crops --out crop_db.json`
+
+To copy the file from the docker container to a local directory, do this:
+
+`sudo docker cp <CONTAINER_ID>:/crop_db.json /path/to/localdir`
