@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 import mwparserfromhell
 import re
+from datetime import timedelta
 import sys
 import pprint
 from pymongo import MongoClient
@@ -21,17 +22,14 @@ def get_sections(page_title, wiki):
         section_titles.append(section.get_text())
     return section_titles
 
-def print_section_contents(section_title):
-    return
-
 
 def parse(title):
     data = {"action": "query", "prop": "revisions", "rvlimit": 1,
             "rvprop": "content", "format": "json", "titles": title}
     try:
         raw = urlopen(API_URL, urlencode(data).encode()).read()
-    except ConnectionRefusedError:
-        print("Oops, connection refused. Retrying...")
+    except:
+        print("Oops, something is broken. Retrying...")
         parse(title)
 
     res = json.loads(raw)
@@ -96,28 +94,32 @@ record_number_ingested = 0
 CATEGORY = "Plant"
 NUM_RESULTS = None
 
-plantwiki = MediaWiki(url=API_URL, rate_limit=True, timeout=100)
+plantwiki = MediaWiki(url=API_URL, rate_limit=True, rate_limit_wait=(timedelta(seconds=1)), timeout=100)
 
 all_plant_names = plantwiki.categorymembers(CATEGORY, results=NUM_RESULTS, subcategories=False)
 
 for plant_name in all_plant_names:
 
-    wikicode = parse(plant_name)
+    try:
+        wikicode = parse(plant_name)
+    except ValueError:
+        print("Encountered an issue getting", plant_name, "from wiki. Continuing on...")
+        continue
     templates = wikicode.filter_templates()
     plant_info = get_param_dict(templates)
     record_number_ingested += 1
 
-    # INFO
-    section_list = get_sections(all_plant_names[0], plantwiki)
-    for section in section_list:
-        if section not in full_section_list:
-            full_section_list.append(section)
+    # INFO: Getting sections takes quite a bit of time
+    #    section_list = get_sections(all_plant_names[0], plantwiki)
+    #    for section in section_list:
+    #        if section not in full_section_list:
+    #            full_section_list.append(section)
     # MORE INFO
     print("Name:", plant_name)
     print("MongoDB ID:", crops.insert_one(plant_info).inserted_id, "\n")
     #4print("Section list:", section_list)
 
 # EVEN MORE INFO
-print("\nList of section keys:")
-pp.pprint(full_section_list)
+# print("\nList of section keys:")
+# pp.pprint(full_section_list)
 print("Records ingested:", record_number_ingested)
